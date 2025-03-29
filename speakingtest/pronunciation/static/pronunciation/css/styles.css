@@ -1,0 +1,212 @@
+/* Pronunciation Testing App Styles */
+
+:root {
+    --primary-color: #4285F4;
+    --secondary-color: #34A853;
+    --accent-color: #FBBC05;
+    --danger-color: #EA4335;
+    --background-color: #f8f9fa;
+    --text-color: #212529;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    flex-grow: 1;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.sentence-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.sentence-text {
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--text-color);
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.btn-speak {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-speak:hover {
+    background-color: #3367d6;
+    transform: translateY(-2px);
+}
+
+.btn-record {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-record:hover {
+    background-color: #2d9247;
+    transform: translateY(-2px);
+}
+
+.btn-stop {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: none;
+}
+
+.btn-stop:hover {
+    background-color: #d62516;
+    transform: translateY(-2px);
+}
+
+.btn-next {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-next:hover {
+    background-color: #e7ad00;
+    transform: translateY(-2px);
+}
+
+.recording-indicator {
+    display: none;
+    color: var(--danger-color);
+    text-align: center;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.results-container {
+    background-color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    /* Initially hidden until we have results */
+    display: none;
+}
+
+.score-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.overall-score {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.score-label {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 2rem;
+}
+
+.word-scores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.word-score-item {
+    background-color: #f8f9fa;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.word-text {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.word-score {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.score-good {
+    color: var(--secondary-color);
+}
+
+.score-medium {
+    color: var(--accent-color);
+}
+
+.score-poor {
+    color: var(--danger-color);
+}
+
+.audio-container {
+    margin-top: 1.5rem;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+}

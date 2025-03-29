@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Pronunciation Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{% static 'pronunciation/css/styles.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <h1>English Pronunciation Test</h1>
+            <p class="text-muted">Improve your English speaking skills by practicing pronunciation</p>
+        </div>
+        
+        <div class="sentence-card">
+            <div class="sentence-text" id="sentence">{{ sentence }}</div>
+            
+            <div class="action-buttons">
+                <button id="btnSpeak" class="btn btn-speak">
+                    <i class="bi bi-volume-up-fill me-2"></i>Listen
+                </button>
+                <button id="btnRecord" class="btn btn-record">
+                    <i class="bi bi-mic-fill me-2"></i>Record
+                </button>
+                <button id="btnStop" class="btn btn-stop">
+                    <i class="bi bi-stop-fill me-2"></i>Stop
+                </button>
+                <button id="btnNext" class="btn btn-next">
+                    <i class="bi bi-arrow-right me-2"></i>Next Sentence
+                </button>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="/speech-to-text/" class="btn btn-info">
+                    <i class="bi bi-mic-fill me-2"></i>Test Speech-to-Text Only
+                </a>
+            </div>
+            
+            <div id="recordingIndicator" class="recording-indicator">
+                Recording... Speak clearly
+            </div>
+        </div>
+        
+        <div class="results-container" id="resultsContainer">
+            <div class="score-header">
+                <h3>Your Pronunciation Score</h3>
+            </div>
+            
+            <div class="overall-score" id="overallScore">87</div>
+            <div class="score-label">out of 100</div>
+            
+            <div class="word-scores" id="wordScores">
+                <!-- Word scores will be populated dynamically -->
+            </div>
+            
+            <div class="audio-container">
+                <h5>Your Recording</h5>
+                <audio id="recordedAudio" controls class="w-100"></audio>
+            </div>
+        </div>
+        
+        <div class="footer">
+            &copy; {% now "Y" %} English Pronunciation Test | All Rights Reserved
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'pronunciation/js/pronunciation.js' %}"></script>
+</body>
+</html>
