@@ -23,7 +23,7 @@ SayItPro is a web application that helps users improve their English pronunciati
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/SayItPro.git
+git clone https://github.com/alshehri12/SayItPro.git
 cd SayItPro
 ```
 
