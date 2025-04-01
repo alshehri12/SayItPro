@@ -178,15 +178,47 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Next sentence button click
     btnNext.addEventListener('click', function() {
-        fetch('/api/random-sentence/')
+        // Show loading state
+        sentenceElement.innerHTML = '<span class="loading-text">Loading new sentence...</span>';
+        
+        // Get the active difficulty level
+        let difficulty = 'all';
+        const activeLevelTab = document.querySelector('.level-tab.active');
+        if (activeLevelTab) {
+            difficulty = activeLevelTab.textContent.toLowerCase();
+        }
+        
+        // Fetch a new sentence with the selected difficulty
+        fetch(`/api/random-sentence/?difficulty=${difficulty}`)
             .then(response => response.json())
             .then(data => {
                 sentenceElement.textContent = data.sentence;
                 resultsContainer.style.display = 'none';
+                
+                // Highlight the sentence briefly to show it changed
+                sentenceElement.classList.add('sentence-highlight');
+                setTimeout(() => {
+                    sentenceElement.classList.remove('sentence-highlight');
+                }, 500);
             })
             .catch(error => {
                 console.error('Error fetching new sentence:', error);
+                sentenceElement.textContent = 'Error loading sentence. Please try again.';
             });
+    });
+    
+    // Handle difficulty level selection
+    const levelTabs = document.querySelectorAll('.level-tab');
+    levelTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            levelTabs.forEach(t => t.classList.remove('active'));
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Get a new sentence with the selected difficulty
+            btnNext.click();
+        });
     });
     
     // Function to evaluate pronunciation

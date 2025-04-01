@@ -44,10 +44,38 @@ def speech_to_text(request):
     })
 
 def get_random_sentence(request):
-    """API to get a new random sentence."""
+    """API to get a new random sentence with optional difficulty filtering."""
+    # Get difficulty from query params, defaulting to 'all'
+    difficulty = request.GET.get('difficulty', 'all').lower()
+    
+    # Create queryset based on difficulty
+    queryset = Sentence.objects.all()
+    
+    # If a specific difficulty is requested, filter by it
+    if difficulty in ['easy', 'medium', 'hard', 'beginner', 'intermediate', 'advanced']:
+        # Map beginner/intermediate/advanced to easy/medium/hard if needed
+        if difficulty == 'beginner':
+            difficulty = 'easy'
+        elif difficulty == 'intermediate':
+            difficulty = 'medium'
+        elif difficulty == 'advanced':
+            difficulty = 'hard'
+            
+        queryset = queryset.filter(difficulty=difficulty)
+    
     try:
-        random_sentence = random.choice(Sentence.objects.all())
-        sentence_text = random_sentence.text
+        # Get count of matching sentences
+        sentence_count = queryset.count()
+        
+        if sentence_count > 0:
+            # Get a random sentence using an efficient method
+            random_index = random.randint(0, sentence_count - 1)
+            random_sentence = queryset[random_index]
+            sentence_text = random_sentence.text
+            difficulty_level = random_sentence.difficulty
+        else:
+            # Fallback if no sentences match the filter
+            raise IndexError
     except IndexError:
         # If no sentences in the database yet, provide some defaults
         default_sentences = [
@@ -58,8 +86,12 @@ def get_random_sentence(request):
             "Could you please speak more slowly?"
         ]
         sentence_text = random.choice(default_sentences)
+        difficulty_level = 'medium'
     
-    return JsonResponse({'sentence': sentence_text})
+    return JsonResponse({
+        'sentence': sentence_text,
+        'difficulty': difficulty_level
+    })
 
 # Load the speech recognition model and processor (lazy loading to save memory)
 speech_model = None
