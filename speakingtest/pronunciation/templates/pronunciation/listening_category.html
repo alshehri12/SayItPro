@@ -1,0 +1,102 @@
+{% extends 'pronunciation/base.html' %}
+{% load static %}
+
+{% block title %}{{ category_display }} Listening Exercises - SayItPro{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pronunciation/css/modern-styles.css' %}">
+<style>
+    .exercise-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        background-color: white;
+    }
+    
+    .exercise-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .difficulty-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-right: 8px;
+    }
+    
+    .difficulty-easy {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .difficulty-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .difficulty-hard {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .category-banner {
+        background-color: #007bff;
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="category-banner text-center">
+        <h1>{{ category_display }} Listening Exercises</h1>
+        <p class="lead">Practice your listening skills with our {{ category_display|lower }} exercises.</p>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <a href="{% url 'listening_index' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to All Exercises
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% if exercises %}
+            {% for exercise in exercises %}
+                <div class="col-md-4 mb-4">
+                    <div class="exercise-card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ exercise.title }}</h5>
+                            <div class="mb-2">
+                                <span class="difficulty-badge difficulty-{{ exercise.level }}">
+                                    {{ exercise.get_level_display }}
+                                </span>
+                            </div>
+                            <p class="card-text">{{ exercise.description|truncatechars:100 }}</p>
+                            <a href="{% url 'listening_detail' slug=exercise.slug %}" class="btn btn-primary">Start Exercise</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <p>No {{ category_display|lower }} listening exercises found. Check back later!</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

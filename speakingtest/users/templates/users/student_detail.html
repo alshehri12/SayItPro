@@ -1,0 +1,287 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block title %}Student Details{% endblock %}
+
+{% block dashboard_content %}
+<div class="container dashboard-container">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'student_list' %}">Students</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ student.first_name|default:student.username }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>{{ student.first_name }} {{ student.last_name }}</h1>
+                <a href="{% url 'admin:users_user_change' student.id %}" class="btn btn-outline-primary">Edit Student</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="text-center mb-4">
+                    {% if student.profile_image %}
+                    <img src="{{ student.profile_image.url }}" alt="{{ student.username }}" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                    <div style="width: 150px; height: 150px; background-color: #e9ecef; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 50px; color: #6c757d; font-weight: bold;">
+                        {{ student.username|first|upper }}
+                    </div>
+                    {% endif %}
+                    <h2 class="mt-3">{{ student.first_name }} {{ student.last_name }}</h2>
+                    <p class="text-muted">{{ student.email }}</p>
+                </div>
+                
+                <div class="student-info">
+                    <h5>Student Information</h5>
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <th>Username:</th>
+                                    <td>{{ student.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Joined:</th>
+                                    <td>{{ student.date_joined|date:"M d, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Login:</th>
+                                    <td>{{ student.last_login|date:"M d, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Bio:</th>
+                                    <td>{{ student.bio|default:"No bio added" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Student Badges -->
+            <div class="stats-card">
+                <h3>Student Badges</h3>
+                
+                {% if badges %}
+                <div class="row">
+                    {% for student_badge in badges %}
+                    <div class="col-md-4 mb-3">
+                        <div class="badge-card">
+                            <img src="{{ student_badge.badge.image.url }}" alt="{{ student_badge.badge.name }}" class="badge-icon">
+                            <div>{{ student_badge.badge.name }}</div>
+                            <small class="text-muted">{{ student_badge.date_earned|date:"M d, Y" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    This student hasn't earned any badges yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Reading Progress -->
+            <div class="stats-card">
+                <h3>Reading Progress</h3>
+                
+                {% if progress %}
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card text-center p-3">
+                            <h5>Current Level</h5>
+                            <div class="display-4">{{ progress.current_level }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center p-3">
+                            <h5>Total Readings</h5>
+                            <div class="display-4">{{ progress.total_readings }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center p-3">
+                            <h5>Avg Accuracy</h5>
+                            <div class="display-4">{{ progress.avg_accuracy|floatformat:"1" }}%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card p-3">
+                            <h5>Average Reading Speed</h5>
+                            <div class="progress-chart">
+                                <canvas id="speedChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card p-3">
+                            <h5>Reading Metrics</h5>
+                            <div class="progress-chart">
+                                <canvas id="metricsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    This student hasn't completed any reading sessions yet.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Reading Sessions -->
+            <div class="stats-card">
+                <div class="table-header">
+                    <h3 class="mb-0">Reading Sessions</h3>
+                </div>
+                
+                {% if sessions %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Date</th>
+                                <th>Duration</th>
+                                <th>WPM</th>
+                                <th>Accuracy</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in sessions %}
+                            <tr>
+                                <td>{{ session.material.title }}</td>
+                                <td>{{ session.start_time|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if session.end_time %}
+                                    {{ session.duration_seconds|default:0|floatformat:"0" }} sec
+                                    {% else %}
+                                    Incomplete
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.analysis %}
+                                    {{ session.analysis.wpm|floatformat:"0" }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.analysis %}
+                                    {{ session.analysis.accuracy|floatformat:"1" }}%
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'reading_progress:session_result' session.id %}" class="btn btn-sm btn-outline-secondary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    This student hasn't completed any reading sessions yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if progress %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Speed Chart
+        const speedCtx = document.getElementById('speedChart').getContext('2d');
+        const speedChart = new Chart(speedCtx, {
+            type: 'line',
+            data: {
+                labels: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Current'],
+                datasets: [{
+                    label: 'WPM',
+                    data: [
+                        {{ progress.avg_wpm|floatformat:"0" }} * 0.6, 
+                        {{ progress.avg_wpm|floatformat:"0" }} * 0.7, 
+                        {{ progress.avg_wpm|floatformat:"0" }} * 0.8, 
+                        {{ progress.avg_wpm|floatformat:"0" }} * 0.9, 
+                        {{ progress.avg_wpm|floatformat:"0" }}
+                    ],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+        
+        // Metrics Chart  
+        const metricsCtx = document.getElementById('metricsChart').getContext('2d');
+        const metricsChart = new Chart(metricsCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Accuracy', 'Fluency', 'Pronunciation', 'Comprehension', 'Confidence'],
+                datasets: [{
+                    label: 'Reading Metrics',
+                    data: [
+                        {{ progress.avg_accuracy|floatformat:"1" }},
+                        {{ progress.avg_fluency|default:75|floatformat:"1" }},
+                        {{ progress.avg_accuracy|default:80|floatformat:"1" }}, 
+                        75,  // Sample value for comprehension
+                        80   // Sample value for confidence
+                    ],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(255, 99, 132)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(255, 99, 132)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endif %}
+{% endblock %}

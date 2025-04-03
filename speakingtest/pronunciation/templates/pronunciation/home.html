@@ -16,6 +16,30 @@
             <i class="bi bi-soundwave"></i>
         </div>
         <h1>SayItPro</h1>
+        <div class="ms-auto">
+            {% if user.is_authenticated %}
+                <div class="dropdown">
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle me-1"></i> {{ user.username }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        {% if user.is_admin %}
+                            <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+                        {% elif user.is_teacher %}
+                            <li><a class="dropdown-item" href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a></li>
+                        {% elif user.is_student %}
+                            <li><a class="dropdown-item" href="{% url 'student_dashboard' %}">Student Dashboard</a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                    </ul>
+                </div>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary btn-login">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                </a>
+            {% endif %}
+        </div>
     </div>
 
     <div class="app-container">

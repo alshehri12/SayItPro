@@ -1,0 +1,237 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<div class="container dashboard-container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Welcome, {{ user.first_name|default:user.username }}</h1>
+            <p class="text-muted">Track your reading progress and improve your pronunciation skills</p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h3>Your Statistics</h3>
+                
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #e3f2fd;">
+                        <i class="bi bi-book" style="color: #1976d2;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Reading Sessions</h4>
+                        <p>{{ total_sessions|default:"0" }}</p>
+                    </div>
+                </div>
+                
+                {% if progress %}
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #e8f5e9;">
+                        <i class="bi bi-speedometer" style="color: #2e7d32;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Average Speed</h4>
+                        <p>{{ progress.avg_wpm|floatformat:"0" }} WPM</p>
+                    </div>
+                </div>
+                
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #fff3e0;">
+                        <i class="bi bi-check-circle" style="color: #f57c00;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Accuracy</h4>
+                        <p>{{ progress.avg_accuracy|floatformat:"1" }}%</p>
+                    </div>
+                </div>
+                
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #e1f5fe;">
+                        <i class="bi bi-bar-chart" style="color: #0288d1;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Current Level</h4>
+                        <p>Level {{ progress.current_level }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Complete your first reading session to see your statistics.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Badges Section -->
+            <div class="stats-card">
+                <h3>Your Badges</h3>
+                
+                {% if badges %}
+                <div class="row">
+                    {% for badge in badges %}
+                    <div class="col-4">
+                        <div class="badge-card">
+                            <img src="{{ badge.badge.image.url }}" alt="{{ badge.badge.name }}" class="badge-icon">
+                            <div>{{ badge.badge.name }}</div>
+                            <small class="text-muted">{{ badge.date_earned|date:"M d, Y" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Complete reading sessions to earn badges!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Progress Chart -->
+            {% if progress %}
+            <div class="stats-card">
+                <h3>Your Progress</h3>
+                <div class="progress-chart">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Recommended Materials -->
+            <div class="stats-card">
+                <div class="table-header">
+                    <h3 class="mb-0">Recommended Reading Materials</h3>
+                    <a href="{% url 'reading_progress:materials' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                
+                {% if suggested_materials %}
+                <div class="list-group">
+                    {% for material in suggested_materials %}
+                    <a href="{% url 'reading_progress:material_detail' material.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ material.title }}</h5>
+                            <small>Level {{ material.level.level }}</small>
+                        </div>
+                        <p class="mb-1">{{ material.description|truncatechars:100 }}</p>
+                        <small>Estimated time: {{ material.estimated_time }} minutes</small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No recommended materials available at the moment.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Recent Sessions -->
+            <div class="stats-card">
+                <div class="table-header">
+                    <h3 class="mb-0">Recent Reading Sessions</h3>
+                    <a href="{% url 'reading_progress:sessions' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                
+                {% if recent_sessions %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Date</th>
+                                <th>WPM</th>
+                                <th>Accuracy</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>{{ session.material.title }}</td>
+                                <td>{{ session.start_time|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if session.analysis %}
+                                    {{ session.analysis.wpm|floatformat:"0" }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.analysis %}
+                                    {{ session.analysis.accuracy|floatformat:"1" }}%
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'reading_progress:session_result' session.id %}" class="btn btn-sm btn-outline-secondary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    You haven't completed any reading sessions yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if progress %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        
+        const progressChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Session 1', 'Session 2', 'Session 3', 'Session 4', 'Session 5'],
+                datasets: [
+                    {
+                        label: 'Reading Speed (WPM)',
+                        data: [{{ progress.avg_wpm|floatformat:"0" }} * 0.7, {{ progress.avg_wpm|floatformat:"0" }} * 0.8, {{ progress.avg_wpm|floatformat:"0" }} * 0.9, {{ progress.avg_wpm|floatformat:"0" }} * 0.95, {{ progress.avg_wpm|floatformat:"0" }}],
+                        borderColor: '#1976d2',
+                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Accuracy (%)',
+                        data: [{{ progress.avg_accuracy|floatformat:"1" }} * 0.9, {{ progress.avg_accuracy|floatformat:"1" }} * 0.92, {{ progress.avg_accuracy|floatformat:"1" }} * 0.95, {{ progress.avg_accuracy|floatformat:"1" }} * 0.98, {{ progress.avg_accuracy|floatformat:"1" }}],
+                        borderColor: '#f57c00',
+                        backgroundColor: 'rgba(245, 124, 0, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,548 @@
+{% extends 'pronunciation/base.html' %}
+{% load static %}
+
+{% block title %}{{ exercise.title }} - SayItPro Listening Practice{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pronunciation/css/modern-styles.css' %}">
+<style>
+    .exercise-header {
+        background-color: #f8f9fa;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 8px;
+    }
+    
+    .difficulty-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-right: 8px;
+    }
+    
+    .difficulty-easy {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .difficulty-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .difficulty-hard {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .vocabulary-item {
+        margin-bottom: 15px;
+        border-left: 3px solid #007bff;
+        padding-left: 10px;
+    }
+    
+    .audio-player-container {
+        background-color: #007bff;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+    
+    .audio-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-play {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: white;
+        color: #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 15px;
+        font-size: 24px;
+    }
+    
+    .btn-play:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .question-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+    }
+    
+    .question-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        margin-right: 10px;
+    }
+    
+    .answer-option {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .answer-option:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .answer-option.selected {
+        background-color: #cfe2ff;
+        border: 1px solid #007bff;
+    }
+    
+    .answer-explanation {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .transcript-container {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+    }
+    
+    .source-attribution {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 30px;
+    }
+    
+    .results-container {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+        display: none;
+    }
+    
+    .score-display {
+        font-size: 24px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .correct-answer {
+        background-color: #d4edda !important;
+        border: 1px solid #c3e6cb !important;
+    }
+    
+    .incorrect-answer {
+        background-color: #f8d7da !important;
+        border: 1px solid #f5c6cb !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Exercise Header -->
+    <div class="exercise-header text-center">
+        <h1>{{ exercise.title }}</h1>
+        <div class="mt-3">
+            <span class="difficulty-badge difficulty-{{ exercise.level }}">
+                {{ exercise.get_level_display }}
+            </span>
+            <span class="category-badge">
+                {{ exercise.get_category_display }}
+            </span>
+        </div>
+        <p class="lead mt-3">{{ exercise.description }}</p>
+    </div>
+    
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Pre-listening vocabulary if available -->
+            {% if vocabulary %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Vocabulary</h4>
+                        <p class="text-muted mb-0">Learn these words before listening</p>
+                    </div>
+                    <div class="card-body">
+                        {% for item in vocabulary %}
+                            <div class="vocabulary-item">
+                                <h5>{{ item.word }}</h5>
+                                <p>{{ item.definition }}</p>
+                                {% if item.example %}
+                                    <p class="text-muted"><em>"{{ item.example }}"</em></p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Audio Player -->
+            <div class="audio-player-container">
+                <h4 class="text-center mb-3">Listen to the Audio</h4>
+                <div class="audio-controls">
+                    <button class="btn btn-play" id="restartBtn">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button class="btn btn-play" id="playBtn">
+                        <i class="fas fa-play" id="playIcon"></i>
+                    </button>
+                    <button class="btn btn-play" id="slowBtn">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </button>
+                </div>
+                <audio id="audioPlayer" src="{{ exercise.audio_file.url }}" preload="auto"></audio>
+                <div class="text-center mt-3">
+                    <p>You can play the audio as many times as needed</p>
+                </div>
+            </div>
+            
+            <!-- Questions Section -->
+            <div id="questionsContainer">
+                <h3 class="mb-4">Comprehension Questions</h3>
+                <p class="text-muted mb-4">Answer these questions based on what you heard.</p>
+                
+                <form id="answerForm" data-exercise-id="{{ exercise.id }}">
+                    {% for question in questions %}
+                        <div class="question-card" data-question-id="{{ question.id }}">
+                            <h5><span class="question-number">{{ forloop.counter }}</span> {{ question.text }}</h5>
+                            
+                            {% if question.question_type == 'multiple_choice' %}
+                                {% for answer in question.possible_answers %}
+                                    <div class="answer-option" data-answer-id="{{ answer.id }}">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" 
+                                                name="question_{{ question.id }}" 
+                                                id="answer_{{ answer.id }}" 
+                                                value="{{ answer.id }}">
+                                            <label class="form-check-label" for="answer_{{ answer.id }}">
+                                                {{ answer.text }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% elif question.question_type == 'true_false' %}
+                                {% for answer in question.possible_answers %}
+                                    <div class="answer-option" data-answer-id="{{ answer.id }}">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" 
+                                                name="question_{{ question.id }}" 
+                                                id="answer_{{ answer.id }}" 
+                                                value="{{ answer.id }}">
+                                            <label class="form-check-label" for="answer_{{ answer.id }}">
+                                                {{ answer.text }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="form-group">
+                                    <input type="text" class="form-control" 
+                                        name="question_{{ question.id }}" 
+                                        placeholder="Your answer">
+                                </div>
+                            {% endif %}
+                            
+                            <div class="answer-explanation" id="explanation_{{ question.id }}">
+                                {{ question.explanation }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Submit Answers</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Results Container (shown after submission) -->
+            <div id="resultsContainer" class="results-container">
+                <h3 class="mb-4">Your Results</h3>
+                <div class="score-display">
+                    <div class="display-4" id="scoreValue">0%</div>
+                    <p>Score</p>
+                </div>
+                
+                <div id="resultsDetails"></div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-primary" id="showTranscriptBtn">Show Transcript</button>
+                    <a href="{% url 'listening_index' %}" class="btn btn-outline-primary">Try Another Exercise</a>
+                </div>
+            </div>
+            
+            <!-- Transcript (hidden initially) -->
+            <div id="transcriptContainer" class="transcript-container" style="display: none;">
+                <h3 class="mb-3">Transcript</h3>
+                <div class="transcript-text">
+                    {{ exercise.transcript|linebreaks }}
+                </div>
+            </div>
+            
+            <!-- Source Attribution -->
+            {% if exercise.source %}
+                <div class="source-attribution">
+                    Source: {{ exercise.source }}
+                    {% if exercise.source_url %}
+                        | <a href="{{ exercise.source_url }}" target="_blank">Visit Original</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Tips for Better Listening</h4>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Listen to the complete audio first before answering questions.</li>
+                        <li>Focus on understanding the main ideas rather than every word.</li>
+                        <li>Use the context to help you understand unfamiliar words.</li>
+                        <li>Take notes if it helps you remember key points.</li>
+                        <li>Use the slow playback option if you're having trouble understanding.</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h4>More Exercises</h4>
+                </div>
+                <div class="card-body">
+                    <p>Looking for more practice? Try these categories:</p>
+                    <div class="list-group">
+                        {% for category_code, category_name in categories.items %}
+                            <a href="{% url 'listening_by_category' category=category_code %}" class="list-group-item list-group-item-action">
+                                {{ category_name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Audio player functionality
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const restartBtn = document.getElementById('restartBtn');
+    const slowBtn = document.getElementById('slowBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const answerForm = document.getElementById('answerForm');
+    const questionsContainer = document.getElementById('questionsContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const scoreValue = document.getElementById('scoreValue');
+    const resultsDetails = document.getElementById('resultsDetails');
+    const showTranscriptBtn = document.getElementById('showTranscriptBtn');
+    const transcriptContainer = document.getElementById('transcriptContainer');
+    
+    // Play/pause functionality
+    playBtn.addEventListener('click', function() {
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+            playIcon.classList.remove('fa-play');
+            playIcon.classList.add('fa-pause');
+        } else {
+            audioPlayer.pause();
+            playIcon.classList.remove('fa-pause');
+            playIcon.classList.add('fa-play');
+        }
+    });
+    
+    // Restart functionality
+    restartBtn.addEventListener('click', function() {
+        audioPlayer.currentTime = 0;
+        audioPlayer.play();
+        playIcon.classList.remove('fa-play');
+        playIcon.classList.add('fa-pause');
+    });
+    
+    // Slow playback
+    slowBtn.addEventListener('click', function() {
+        if (audioPlayer.playbackRate === 1.0) {
+            audioPlayer.playbackRate = 0.75;
+            slowBtn.classList.add('active');
+        } else if (audioPlayer.playbackRate === 0.75) {
+            audioPlayer.playbackRate = 0.5;
+        } else {
+            audioPlayer.playbackRate = 1.0;
+            slowBtn.classList.remove('active');
+        }
+    });
+    
+    // Reset play button when audio ends
+    audioPlayer.addEventListener('ended', function() {
+        playIcon.classList.remove('fa-pause');
+        playIcon.classList.add('fa-play');
+    });
+    
+    // Make entire answer option clickable
+    const answerOptions = document.querySelectorAll('.answer-option');
+    answerOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                
+                // Remove selected class from all options in this question
+                const questionCard = this.closest('.question-card');
+                questionCard.querySelectorAll('.answer-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                
+                // Add selected class to this option
+                this.classList.add('selected');
+            }
+        });
+    });
+    
+    // Handle form submission
+    answerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Collect all answers
+        const answers = {};
+        const questions = document.querySelectorAll('.question-card');
+        
+        questions.forEach(question => {
+            const questionId = question.dataset.questionId;
+            const radioInputs = question.querySelectorAll('input[type="radio"]:checked');
+            const textInputs = question.querySelectorAll('input[type="text"]');
+            
+            if (radioInputs.length > 0) {
+                answers[questionId] = radioInputs[0].value;
+            } else if (textInputs.length > 0 && textInputs[0].value.trim() !== '') {
+                answers[questionId] = textInputs[0].value.trim();
+            }
+        });
+        
+        // Submit answers to the server
+        const exerciseId = answerForm.dataset.exerciseId;
+        
+        fetch(`/api/check-answers/${exerciseId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                answers: answers
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
+            // Display results
+            scoreValue.textContent = `${data.score}%`;
+            
+            // Process and display detailed results
+            let detailsHTML = '';
+            data.results.forEach((result, index) => {
+                const questionCard = document.querySelector(`.question-card[data-question-id="${result.question_id}"]`);
+                const questionText = questionCard.querySelector('h5').textContent;
+                
+                // Mark correct/incorrect answers
+                if (questionCard) {
+                    const selectedOption = questionCard.querySelector('.answer-option.selected');
+                    if (selectedOption) {
+                        if (result.is_correct) {
+                            selectedOption.classList.add('correct-answer');
+                        } else {
+                            selectedOption.classList.add('incorrect-answer');
+                        }
+                    }
+                    
+                    // Show explanation
+                    const explanation = document.getElementById(`explanation_${result.question_id}`);
+                    if (explanation) {
+                        explanation.style.display = 'block';
+                    }
+                }
+                
+                detailsHTML += `
+                    <div class="alert ${result.is_correct ? 'alert-success' : 'alert-danger'} mb-3">
+                        <strong>Question ${index + 1}:</strong> ${result.is_correct ? 'Correct' : 'Incorrect'}
+                        ${result.explanation ? `<div class="mt-2"><strong>Explanation:</strong> ${result.explanation}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsDetails.innerHTML = detailsHTML;
+            
+            // Hide questions and show results
+            questionsContainer.style.display = 'none';
+            resultsContainer.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+    
+    // Show transcript button
+    showTranscriptBtn.addEventListener('click', function() {
+        transcriptContainer.style.display = 'block';
+        this.style.display = 'none';
+    });
+    
+    // Get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

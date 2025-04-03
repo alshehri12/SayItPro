@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'pronunciation',
+    'reading_progress',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -66,7 +68,7 @@ ROOT_URLCONF = 'speakingtest.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -136,7 +138,19 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 WHITENOISE_STATIC_PREFIX = STATIC_URL
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Media files (User uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Use our custom user model
+AUTH_USER_MODEL = 'users.User'
+
+# Authentication settings
+LOGIN_REDIRECT_URL = '/users/role-redirect/'
+LOGIN_URL = 'login'
+LOGOUT_REDIRECT_URL = '/'

@@ -22,14 +22,46 @@ body {
 
 .app-header {
   text-align: center;
-  padding: 1.5rem 0;
+  padding: 1.5rem 2rem;
   color: white;
   font-weight: 300;
   letter-spacing: 5px;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   gap: 15px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.app-header .ms-auto {
+  margin-left: auto;
+}
+
+.btn-login {
+  background-color: var(--accent-color);
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 30px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-login:hover {
+  background-color: white;
+  color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
 }
 
 .app-container {

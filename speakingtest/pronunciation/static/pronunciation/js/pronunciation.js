@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 wordScoresContainer.innerHTML = '';
                 wordScoresContainer.appendChild(recognizedTextElement);
                 
-                // Add word scores
+                // Add word scores with phoneme-level analysis
                 Object.entries(data.word_scores).forEach(([word, score]) => {
                     const wordElement = document.createElement('div');
                     wordElement.className = 'word-score-item';
@@ -298,10 +298,81 @@ document.addEventListener('DOMContentLoaded', function() {
                         scoreClass = 'score-poor';
                     }
                     
-                    wordElement.innerHTML = `
-                        <div class="word-text">${word}</div>
-                        <div class="word-score ${scoreClass}">${score}</div>
-                    `;
+                    // Check if we have phoneme analysis for this word
+                    let wordContent = '';
+                    if (data.phoneme_analysis && data.phoneme_analysis[word]) {
+                        const analysis = data.phoneme_analysis[word];
+                        const refPhonemes = analysis.reference_phonemes;
+                        const problemPhonemes = analysis.problem_phonemes;
+                        
+                        // First try to highlight at the phoneme level if we have the data
+                        if (refPhonemes && refPhonemes.length > 0) {
+                            // Create a phoneme-level display with highlighting
+                            const highlightedPhonemes = [];
+                            
+                            for (let i = 0; i < refPhonemes.length; i++) {
+                                if (problemPhonemes.includes(i)) {
+                                    // Problem phoneme - mark in red
+                                    highlightedPhonemes.push('<span class="problem-phoneme" title="Mispronounced">' + refPhonemes[i] + '</span>');
+                                } else {
+                                    // Correctly pronounced phoneme
+                                    highlightedPhonemes.push('<span class="correct-phoneme">' + refPhonemes[i] + '</span>');
+                                }
+                            }
+                            
+                            // Build IPA notation display
+                            const phoneticDisplay = '<div class="phonetic-display">/' + highlightedPhonemes.join('') + '/</div>';
+                            
+                            // Now highlight the actual word text
+                            let highlightedWord = word;
+                            if (problemPhonemes.length > 0) {
+                                // Create a simple highlighting for the Roman alphabet display
+                                const letters = word.split('');
+                                const letterCount = letters.length;
+                                const problemIndices = [];
+                                
+                                // Roughly map phoneme problems to letter positions
+                                problemPhonemes.forEach(phIdx => {
+                                    // Map the phoneme index to a letter index (simplified mapping)
+                                    const letterIdx = Math.floor((phIdx / refPhonemes.length) * letterCount);
+                                    if (letterIdx >= 0 && letterIdx < letterCount) {
+                                        problemIndices.push(letterIdx);
+                                    }
+                                });
+                                
+                                // Highlight the letters
+                                const highlightedLetters = letters.map((letter, idx) => {
+                                    if (problemIndices.includes(idx)) {
+                                        return '<span class="problem-letter">' + letter + '</span>';
+                                    }
+                                    return letter;
+                                });
+                                
+                                highlightedWord = highlightedLetters.join('');
+                            }
+                            
+                            wordContent = `
+                                <div class="word-text">${highlightedWord}</div>
+                                ${phoneticDisplay}
+                                <div class="word-score ${scoreClass}">${score}</div>
+                                <div class="phoneme-tip">Highlighted sounds need more practice</div>
+                            `;
+                        } else {
+                            // Fallback to regular display
+                            wordContent = `
+                                <div class="word-text">${word}</div>
+                                <div class="word-score ${scoreClass}">${score}</div>
+                            `;
+                        }
+                    } else {
+                        // No phoneme analysis available, show regular display
+                        wordContent = `
+                            <div class="word-text">${word}</div>
+                            <div class="word-score ${scoreClass}">${score}</div>
+                        `;
+                    }
+                    
+                    wordElement.innerHTML = wordContent;
                     
                     wordScoresContainer.appendChild(wordElement);
                 });

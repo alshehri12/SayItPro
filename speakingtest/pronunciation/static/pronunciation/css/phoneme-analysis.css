@@ -1,0 +1,42 @@
+/* Phoneme-level Pronunciation Analysis Styles */
+
+/* Phonetic display for IPA notation */
+.phonetic-display {
+    margin: 8px 0;
+    font-family: 'Arial', sans-serif;
+    font-size: 1.1em;
+    color: #555;
+    padding: 5px 10px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+/* Problematic phonemes styling - highlight in red */
+.problem-phoneme {
+    color: #d32f2f;
+    font-weight: bold;
+    position: relative;
+    text-decoration: underline wavy #d32f2f;
+}
+
+/* Normal phonemes styling */
+.correct-phoneme {
+    color: #2e7d32;
+}
+
+/* Highlight problem letters in the word */
+.problem-letter {
+    color: #d32f2f;
+    font-weight: bold;
+    position: relative;
+}
+
+/* Help text for phoneme analysis */
+.phoneme-tip {
+    font-size: 0.8em;
+    font-style: italic;
+    color: #777;
+    margin-top: 5px;
+    text-align: center;
+}

@@ -1,0 +1,125 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block title %}Students List{% endblock %}
+
+{% block dashboard_content %}
+<div class="container dashboard-container">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Students</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Your Students</h1>
+                <a href="{% url 'admin:users_user_add' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-2"></i> Add New Student
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="stats-card">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 20%;">Name</th>
+                                <th style="width: 15%;">Username</th>
+                                <th style="width: 15%;">Reading Level</th>
+                                <th style="width: 15%;">Sessions</th>
+                                <th style="width: 15%;">Last Activity</th>
+                                <th style="width: 15%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if students %}
+                                {% for student in students %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="student-avatar me-2" style="width: 40px; height: 40px; font-size: 16px;">
+                                                {% if student.profile_image %}
+                                                <img src="{{ student.profile_image.url }}" alt="{{ student.username }}" width="40" height="40" class="rounded-circle">
+                                                {% else %}
+                                                {{ student.username|first|upper }}
+                                                {% endif %}
+                                            </div>
+                                            {{ student.first_name }} {{ student.last_name }}
+                                        </div>
+                                    </td>
+                                    <td>{{ student.username }}</td>
+                                    <td>
+                                        {% if student.readingprogress %}
+                                            Level {{ student.readingprogress.current_level }}
+                                        {% else %}
+                                            Not started
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with sessions_count=student.readingsession_set.count %}
+                                            {% if sessions_count > 0 %}
+                                                {{ sessions_count }} session{{ sessions_count|pluralize }}
+                                            {% else %}
+                                                No sessions
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        {% with last_session=student.readingsession_set.all|dictsort:"start_time"|last %}
+                                            {% if last_session %}
+                                                {{ last_session.start_time|date:"M d, Y" }}
+                                            {% else %}
+                                                Never
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'student_detail' student.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a href="{% url 'admin:users_user_change' student.id %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            You don't have any students assigned yet.
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h5><i class="bi bi-lightbulb me-2"></i> Teacher Tips</h5>
+                <ul>
+                    <li>Regularly review your students' progress to identify areas where they may need additional help.</li>
+                    <li>The student detail page provides in-depth analytics about each student's reading performance.</li>
+                    <li>You can add new students through the "Add New Student" button and assign yourself as their teacher.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

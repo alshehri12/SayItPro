@@ -1,0 +1,288 @@
+/* Reading Progress Tracker Styles */
+
+:root {
+  --reading-primary: #3949ab;
+  --reading-secondary: #00acc1;
+  --reading-accent: #ff6d00;
+  --reading-success: #43a047;
+  --reading-danger: #e53935;
+  --reading-warning: #ffa000;
+  --reading-light: #f5f9ff;
+  --reading-dark: #1a1a2e;
+}
+
+/* Hero section */
+.reading-hero {
+    background-color: var(--reading-light);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-bottom: 3rem;
+    background-image: 
+        radial-gradient(circle at 90% 10%, rgba(57, 73, 171, 0.1), transparent 40%),
+        radial-gradient(circle at 10% 80%, rgba(0, 172, 193, 0.1), transparent 40%);
+}
+
+.reading-hero h1 {
+    color: var(--reading-primary);
+    margin-bottom: 1.5rem;
+}
+
+/* Feature cards */
+.feature-card {
+    background-color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    height: 100%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-align: center;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    color: var(--reading-secondary);
+    margin-bottom: 1.5rem;
+}
+
+/* Section headings */
+.section-heading {
+    color: var(--reading-primary);
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.section-heading::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 60px;
+    background-color: var(--reading-accent);
+}
+
+/* Reading cards */
+.reading-card {
+    height: 100%;
+    transition: transform 0.2s;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.reading-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.reading-card .card-title {
+    color: var(--reading-dark);
+    font-weight: 600;
+}
+
+/* Level cards */
+.level-card {
+    background-color: white;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.level-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Dashboard styles */
+.dashboard-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    color: var(--reading-primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    padding: 1rem;
+}
+
+.stat-card .card-title {
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--reading-primary);
+    margin-bottom: 1rem;
+}
+
+/* Badge styles */
+.badge-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.badge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.badge-image {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.badge-placeholder {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    background-color: var(--reading-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--reading-secondary);
+}
+
+/* Progress bars */
+.progress {
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: var(--reading-secondary);
+}
+
+/* Reading interface */
+.reading-interface {
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Mispronunciation display */
+.phonetic-display {
+    background-color: var(--reading-light);
+    padding: 10px;
+    border-radius: 8px;
+    font-family: 'Arial', sans-serif;
+    margin: 10px 0;
+}
+
+.problem-phoneme {
+    color: var(--reading-danger);
+    font-weight: bold;
+    position: relative;
+    text-decoration: underline wavy var(--reading-danger);
+}
+
+.phoneme-tip {
+    font-size: 0.8em;
+    font-style: italic;
+    color: #777;
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Teacher dashboard */
+.student-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+    overflow: hidden;
+}
+
+.student-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.student-progress {
+    padding: 10px;
+}
+
+.student-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.student-stat {
+    text-align: center;
+}
+
+.student-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--reading-primary);
+}
+
+.student-stat-label {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .reading-hero {
+        padding: 1.5rem;
+    }
+    
+    .feature-card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+    }
+}
+
+/* Animation for badge earning */
+@keyframes badge-pop {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    70% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.new-badge {
+    animation: badge-pop 0.5s forwards;
+}

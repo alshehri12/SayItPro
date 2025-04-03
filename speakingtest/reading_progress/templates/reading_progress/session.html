@@ -1,0 +1,632 @@
+{% extends 'reading_progress/base.html' %}
+{% load static %}
+
+{% block title %}Reading Session - {{ material.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reading-interface {
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .reading-content {
+        font-size: 1.25rem;
+        line-height: 1.8;
+        white-space: pre-line;
+        color: #333;
+        margin-bottom: 2rem;
+    }
+    
+    .reading-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-top: 1px solid #eee;
+    }
+    
+    .timer {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    
+    .recording-indicator {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: #dc3545;
+        display: inline-block;
+        margin-right: 0.5rem;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.4;
+        }
+        100% {
+            opacity: 1;
+        }
+    }
+    
+    .recording-status {
+        font-weight: bold;
+        color: #dc3545;
+    }
+    
+    .results-section {
+        display: none;
+        margin-top: 2rem;
+    }
+    
+    .result-card {
+        border-left: 5px solid var(--primary-color);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+    
+    .wpm-gauge, .accuracy-gauge, .fluency-gauge {
+        position: relative;
+        height: 120px;
+        text-align: center;
+    }
+    
+    .gauge-value {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 1.75rem;
+        font-weight: bold;
+    }
+    
+    .gauge-label {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #666;
+    }
+    
+    .word-highlight {
+        position: relative;
+        display: inline-block;
+        margin: 0 2px;
+    }
+    
+    .problem-word {
+        color: #d32f2f;
+        text-decoration: underline wavy #d32f2f;
+        position: relative;
+    }
+    
+    .focused-text {
+        background-color: rgba(53, 37, 156, 0.1);
+        border-radius: 4px;
+        padding: 0 2px;
+    }
+    
+    .instructions {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .instructions ol {
+        margin-bottom: 0;
+    }
+    
+    #transcriptionText {
+        min-height: 100px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        white-space: pre-line;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'reading_progress:index' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'reading_progress:material_list' %}">Reading Materials</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'reading_progress:material_detail' material.id %}">{{ material.title }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Reading Session</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ material.title }}</h1>
+            <div class="material-info">
+                <span class="badge bg-info">{{ material.level.name }}</span>
+                <span class="badge bg-secondary">{{ material.get_category_display }}</span>
+                <span class="text-muted ms-2">
+                    <i class="bi bi-book"></i> {{ material.word_count }} words | 
+                    <i class="bi bi-clock"></i> ~{{ material.estimated_time_minutes }} minutes
+                </span>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="timer-section">
+                <div class="timer" id="readingTimer">00:00</div>
+                <div class="text-muted small">Reading Time</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="instructions">
+                <h4>Instructions</h4>
+                <ol>
+                    <li>Read the text below aloud at a comfortable pace.</li>
+                    <li>Click "Start Recording" when you're ready to begin.</li>
+                    <li>Read the entire passage clearly.</li>
+                    <li>Click "Stop Recording" when you've finished reading.</li>
+                    <li>Wait for your reading to be analyzed.</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="col-md-12">
+            <div class="reading-interface">
+                <div class="reading-content" id="readingContent">{{ material.content }}</div>
+                
+                <div class="reading-controls">
+                    <div>
+                        <div id="recordingStatus" class="d-none">
+                            <span class="recording-indicator"></span>
+                            <span class="recording-status">Recording...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="btnStartRecording">
+                            <i class="bi bi-mic"></i> Start Recording
+                        </button>
+                        <button class="btn btn-danger d-none" id="btnStopRecording">
+                            <i class="bi bi-stop-circle"></i> Stop Recording
+                        </button>
+                        <a href="{% url 'reading_progress:material_detail' material.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Section (initially hidden) -->
+    <div id="resultsSection" class="results-section">
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <h2>Your Reading Results</h2>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="result-card">
+                    <div class="wpm-gauge" id="wpmGauge"></div>
+                    <div class="gauge-label">SPEED</div>
+                    <div class="gauge-value" id="wpmValue">0</div>
+                    <div class="text-center mt-2">
+                        <small class="text-muted">Words Per Minute</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="result-card">
+                    <div class="accuracy-gauge" id="accuracyGauge"></div>
+                    <div class="gauge-label">ACCURACY</div>
+                    <div class="gauge-value" id="accuracyValue">0%</div>
+                    <div class="text-center mt-2">
+                        <small class="text-muted">Pronunciation Accuracy</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="result-card">
+                    <div class="fluency-gauge" id="fluencyGauge"></div>
+                    <div class="gauge-label">FLUENCY</div>
+                    <div class="gauge-value" id="fluencyValue">0%</div>
+                    <div class="text-center mt-2">
+                        <small class="text-muted">Reading Fluency</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Your Transcription</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="transcriptionText"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Mispronounced Words</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="mispronunciationsContainer">
+                            <p class="text-center text-muted">Processing your reading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <a href="{% url 'reading_progress:complete_session' session.id %}" class="btn btn-primary">Save Results & Continue</a>
+                <a href="{% url 'reading_progress:material_detail' material.id %}" class="btn btn-outline-secondary">Try Again</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/gaugeJS/dist/gauge.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const readingContent = document.getElementById('readingContent');
+    const readingTimer = document.getElementById('readingTimer');
+    const recordingStatus = document.getElementById('recordingStatus');
+    const btnStartRecording = document.getElementById('btnStartRecording');
+    const btnStopRecording = document.getElementById('btnStopRecording');
+    const resultsSection = document.getElementById('resultsSection');
+    const transcriptionText = document.getElementById('transcriptionText');
+    const mispronunciationsContainer = document.getElementById('mispronunciationsContainer');
+    const wpmValue = document.getElementById('wpmValue');
+    const accuracyValue = document.getElementById('accuracyValue');
+    const fluencyValue = document.getElementById('fluencyValue');
+    
+    // Initialize variables
+    let mediaRecorder;
+    let audioChunks = [];
+    let startTime;
+    let timerInterval;
+    let sessionId = '{{ session.id }}';
+    
+    // Initialize Gauge.js elements
+    const wpmGauge = createGauge('wpmGauge', {
+        min: 0,
+        max: 200,
+        dialStartAngle: -90,
+        dialEndAngle: -90.001,
+        value: 0,
+        color: function(value) {
+            if(value < 80) {
+                return "#FFC107"; // yellow/orange for slow
+            } else if(value > 160) {
+                return "#FFC107"; // yellow/orange for too fast
+            } else {
+                return "#4CAF50"; // green for good range
+            }
+        }
+    });
+    
+    const accuracyGauge = createGauge('accuracyGauge', {
+        min: 0,
+        max: 100,
+        dialStartAngle: -90,
+        dialEndAngle: -90.001,
+        value: 0,
+        color: function(value) {
+            if(value < 60) {
+                return "#F44336"; // red for poor
+            } else if(value < 80) {
+                return "#FFC107"; // yellow/orange for average
+            } else {
+                return "#4CAF50"; // green for good
+            }
+        }
+    });
+    
+    const fluencyGauge = createGauge('fluencyGauge', {
+        min: 0,
+        max: 100,
+        dialStartAngle: -90,
+        dialEndAngle: -90.001,
+        value: 0,
+        color: function(value) {
+            if(value < 60) {
+                return "#F44336"; // red for poor
+            } else if(value < 80) {
+                return "#FFC107"; // yellow/orange for average
+            } else {
+                return "#4CAF50"; // green for good
+            }
+        }
+    });
+    
+    function createGauge(elementId, options) {
+        const element = document.getElementById(elementId);
+        const gauge = new Gauge(element).setOptions({
+            angle: 0,
+            lineWidth: 0.3,
+            radiusScale: 0.9,
+            pointer: {
+                length: 0.6,
+                strokeWidth: 0.05,
+                color: '#000000'
+            },
+            limitMax: true,
+            limitMin: true,
+            highDpiSupport: true,
+            staticLabels: {
+                font: "12px sans-serif",
+                labels: [0, options.max/4, options.max/2, options.max*3/4, options.max],
+                color: "#333333",
+                fractionDigits: 0
+            },
+            renderTicks: {
+                divisions: 5,
+                divWidth: 1.1,
+                divLength: 0.7,
+                divColor: '#333333',
+                subDivisions: 3,
+                subLength: 0.5,
+                subWidth: 0.6,
+                subColor: '#666666'
+            },
+            ...options
+        });
+        
+        gauge.maxValue = options.max;
+        gauge.setMinValue(options.min);
+        gauge.set(options.value);
+        return gauge;
+    }
+    
+    // Timer functions
+    function startTimer() {
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+    
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+    
+    function updateTimer() {
+        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+        const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
+        readingTimer.textContent = `${minutes}:${seconds}`;
+    }
+    
+    // Recording functions
+    async function startRecording() {
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.addEventListener('dataavailable', event => {
+            audioChunks.push(event.data);
+        });
+        
+        mediaRecorder.addEventListener('stop', () => {
+            // Process recording
+            processRecording();
+        });
+        
+        // Start recording
+        mediaRecorder.start();
+        startTimer();
+        
+        // UI updates
+        btnStartRecording.classList.add('d-none');
+        btnStopRecording.classList.remove('d-none');
+        recordingStatus.classList.remove('d-none');
+    }
+    
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            stopTimer();
+            
+            // UI updates
+            btnStopRecording.classList.add('d-none');
+            btnStartRecording.classList.remove('d-none');
+            recordingStatus.classList.add('d-none');
+        }
+    }
+    
+    async function processRecording() {
+        // Create blob from audio chunks
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        
+        // Convert to base64
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        
+        reader.onloadend = async function() {
+            const base64Audio = reader.result;
+            
+            // Save the recording to the server
+            try {
+                const saveResponse = await fetch(`/reading/api/save-recording/${sessionId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ audio: base64Audio }),
+                });
+                
+                if (!saveResponse.ok) {
+                    throw new Error('Failed to save recording');
+                }
+                
+                const saveData = await saveResponse.json();
+                
+                if (saveData.status === 'success') {
+                    // Analyze the recording
+                    analyzeRecording();
+                }
+            } catch (error) {
+                console.error('Error processing recording:', error);
+                alert('There was an error processing your recording. Please try again.');
+            }
+        };
+    }
+    
+    async function analyzeRecording() {
+        try {
+            // Show loading state
+            resultsSection.style.display = 'block';
+            
+            // Call API to analyze the reading
+            const response = await fetch(`/reading/api/analyze-reading/${sessionId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to analyze recording');
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Update UI with results
+                displayResults(data);
+            } else {
+                alert('There was an error analyzing your reading. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error analyzing recording:', error);
+            alert('There was an error analyzing your recording. Please try again.');
+        }
+    }
+    
+    function displayResults(data) {
+        // Update gauge values
+        wpmGauge.set(data.wpm);
+        wpmValue.textContent = Math.round(data.wpm);
+        
+        accuracyGauge.set(data.accuracy);
+        accuracyValue.textContent = Math.round(data.accuracy) + '%';
+        
+        fluencyGauge.set(data.fluency);
+        fluencyValue.textContent = Math.round(data.fluency) + '%';
+        
+        // Display transcription
+        transcriptionText.textContent = data.transcription;
+        
+        // Display mispronounced words
+        displayMispronunciations(data.mispronounced_words);
+    }
+    
+    function displayMispronunciations(mispronunciations) {
+        if (!mispronunciations || Object.keys(mispronunciations).length === 0) {
+            mispronunciationsContainer.innerHTML = '<p class="text-center text-success">No mispronunciations detected! Great job!</p>';
+            return;
+        }
+        
+        let html = '<div class="row">';
+        
+        for (const [word, details] of Object.entries(mispronunciations)) {
+            const phonemeAnalysis = details.phoneme_analysis || {};
+            
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">${word}</h5>
+                            <div class="mb-2">
+                                <span class="badge bg-danger">Score: ${Math.round(details.score)}%</span>
+                            </div>
+                            <p class="card-text">
+                                <strong>Your pronunciation:</strong> ${details.user_word}
+                            </p>`;
+            
+            if (phonemeAnalysis.ipa_reference) {
+                html += `
+                    <div class="phonetic-display">
+                        <div><strong>Correct IPA:</strong> ${phonemeAnalysis.ipa_reference}</div>
+                        <div><strong>Your IPA:</strong> ${phonemeAnalysis.ipa_user}</div>
+                    </div>`;
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        html += '</div>';
+        mispronunciationsContainer.innerHTML = html;
+    }
+    
+    // Event Listeners
+    btnStartRecording.addEventListener('click', startRecording);
+    btnStopRecording.addEventListener('click', stopRecording);
+    
+    // Check if there's already an analysis for this session
+    checkExistingAnalysis();
+    
+    async function checkExistingAnalysis() {
+        try {
+            const response = await fetch(`/reading/api/session-progress/${sessionId}/`);
+            const data = await response.json();
+            
+            if (data.has_analysis) {
+                // Load existing analysis
+                resultsSection.style.display = 'block';
+                
+                // Update gauge values
+                wpmGauge.set(data.wpm);
+                wpmValue.textContent = Math.round(data.wpm);
+                
+                accuracyGauge.set(data.accuracy);
+                accuracyValue.textContent = Math.round(data.accuracy) + '%';
+                
+                fluencyGauge.set(data.fluency);
+                fluencyValue.textContent = Math.round(data.fluency) + '%';
+            }
+        } catch (error) {
+            console.error('Error checking existing analysis:', error);
+        }
+    }
+});
+</script>
+{% endblock %}

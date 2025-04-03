@@ -1,0 +1,244 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<div class="container dashboard-container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Teacher Dashboard</h1>
+            <p class="text-muted">Welcome, {{ user.first_name|default:user.username }}. Manage your students and track their progress.</p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <h3>Overview</h3>
+                
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #e3f2fd;">
+                        <i class="bi bi-people" style="color: #1976d2;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Students</h4>
+                        <p>{{ students_count|default:"0" }}</p>
+                    </div>
+                </div>
+                
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #fff3e0;">
+                        <i class="bi bi-journal-text" style="color: #f57c00;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Recent Sessions</h4>
+                        <p>{{ recent_sessions.count|default:"0" }}</p>
+                    </div>
+                </div>
+                
+                {% if avg_wpm %}
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #e8f5e9;">
+                        <i class="bi bi-speedometer" style="color: #2e7d32;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Avg. Speed</h4>
+                        <p>{{ avg_wpm|floatformat:"0" }} WPM</p>
+                    </div>
+                </div>
+                
+                <div class="stats-item">
+                    <div class="stats-icon" style="background-color: #e1f5fe;">
+                        <i class="bi bi-check-circle" style="color: #0288d1;"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h4>Avg. Accuracy</h4>
+                        <p>{{ avg_accuracy|floatformat:"1" }}%</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="stats-card">
+                <div class="table-header">
+                    <h3 class="mb-0">Quick Actions</h3>
+                </div>
+                <div class="list-group">
+                    <a href="{% url 'student_list' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <i class="bi bi-people me-3 fs-5"></i>
+                        View All Students
+                    </a>
+                    <a href="{% url 'reading_progress:materials' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <i class="bi bi-book me-3 fs-5"></i>
+                        Browse Reading Materials
+                    </a>
+                    <a href="{% url 'admin:reading_progress_readingmaterial_add' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <i class="bi bi-file-earmark-plus me-3 fs-5"></i>
+                        Add New Reading Material
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Class Performance Chart -->
+            {% if avg_wpm and avg_accuracy %}
+            <div class="stats-card">
+                <h3>Class Performance</h3>
+                <div class="progress-chart">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Students List -->
+            <div class="stats-card">
+                <div class="table-header">
+                    <h3 class="mb-0">Your Students</h3>
+                    <a href="{% url 'student_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                
+                {% if students %}
+                <div class="students-list">
+                    {% for student in students|slice:":5" %}
+                    <div class="student-card">
+                        <div class="student-avatar">
+                            {% if student.profile_image %}
+                            <img src="{{ student.profile_image.url }}" alt="{{ student.username }}">
+                            {% else %}
+                            {{ student.username|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div class="student-info">
+                            <div class="student-name">{{ student.first_name }} {{ student.last_name }}</div>
+                            <div class="student-status">
+                                {% if student.readingprogress %}
+                                Level {{ student.readingprogress.current_level }} - {{ student.readingprogress.total_readings }} readings
+                                {% else %}
+                                No readings yet
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="student-actions">
+                            <a href="{% url 'student_detail' student.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    You don't have any students assigned yet.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Recent Sessions -->
+            <div class="stats-card">
+                <div class="table-header">
+                    <h3 class="mb-0">Recent Reading Sessions</h3>
+                </div>
+                
+                {% if recent_sessions %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Material</th>
+                                <th>Date</th>
+                                <th>WPM</th>
+                                <th>Accuracy</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>{{ session.user.first_name|default:session.user.username }}</td>
+                                <td>{{ session.material.title }}</td>
+                                <td>{{ session.start_time|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if session.analysis %}
+                                    {{ session.analysis.wpm|floatformat:"0" }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.analysis %}
+                                    {{ session.analysis.accuracy|floatformat:"1" }}%
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'reading_progress:session_result' session.id %}" class="btn btn-sm btn-outline-secondary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No reading sessions have been completed by your students yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if avg_wpm and avg_accuracy %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        const performanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Reading Speed (WPM)', 'Accuracy (%)', 'Fluency (%)'],
+                datasets: [
+                    {
+                        label: 'Class Average',
+                        data: [
+                            {{ avg_wpm|floatformat:"0" }}, 
+                            {{ avg_accuracy|floatformat:"1" }},
+                            {{ avg_fluency|default:"70"|floatformat:"1" }}
+                        ],
+                        backgroundColor: [
+                            'rgba(25, 118, 210, 0.7)',
+                            'rgba(245, 124, 0, 0.7)',
+                            'rgba(46, 125, 50, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(25, 118, 210)',
+                            'rgb(245, 124, 0)',
+                            'rgb(46, 125, 50)'
+                        ],
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endif %}
+{% endblock %}

@@ -176,6 +176,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-width: 120px;
+    margin-bottom: 10px;
 }
 
 .word-text {

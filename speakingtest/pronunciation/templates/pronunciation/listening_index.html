@@ -1,0 +1,161 @@
+{% extends 'pronunciation/base.html' %}
+{% load static %}
+
+{% block title %}Listening Practice - SayItPro{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pronunciation/css/modern-styles.css' %}">
+<style>
+    .exercise-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        background-color: white;
+    }
+    
+    .exercise-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .difficulty-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-right: 8px;
+    }
+    
+    .difficulty-easy {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .difficulty-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .difficulty-hard {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .filters {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Listening Practice</h1>
+            <p class="lead">Improve your English listening skills with these exercises. Choose from different categories and difficulty levels.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Filter Sidebar -->
+        <div class="col-md-3">
+            <div class="filters">
+                <h5>Filter Exercises</h5>
+                
+                <form method="get" action="{% url 'listening_index' %}">
+                    <div class="mb-3">
+                        <label for="level" class="form-label">Difficulty Level</label>
+                        <select class="form-select" id="level" name="level">
+                            <option value="">All Levels</option>
+                            {% for level_code, level_name in levels.items %}
+                                <option value="{{ level_code }}" {% if selected_level == level_code %}selected{% endif %}>{{ level_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">All Categories</option>
+                            {% for category_code, category_name in categories.items %}
+                                <option value="{{ category_code }}" {% if selected_category == category_code %}selected{% endif %}>{{ category_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="q" value="{{ query|default:'' }}" placeholder="Search exercises...">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </form>
+            </div>
+            
+            <div class="mt-4">
+                <h5>Browse by Category</h5>
+                <div class="list-group">
+                    {% for category_code, category_name in categories.items %}
+                        <a href="{% url 'listening_by_category' category=category_code %}" class="list-group-item list-group-item-action">
+                            {{ category_name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Exercise Listings -->
+        <div class="col-md-9">
+            {% if exercises %}
+                <div class="row">
+                    {% for exercise in exercises %}
+                        <div class="col-md-6">
+                            <div class="exercise-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ exercise.title }}</h5>
+                                    <div class="mb-2">
+                                        <span class="difficulty-badge difficulty-{{ exercise.level }}">
+                                            {{ exercise.get_level_display }}
+                                        </span>
+                                        <span class="category-badge">
+                                            {{ exercise.get_category_display }}
+                                        </span>
+                                    </div>
+                                    <p class="card-text">{{ exercise.description|truncatechars:100 }}</p>
+                                    <a href="{% url 'listening_detail' slug=exercise.slug %}" class="btn btn-primary">Start Exercise</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p>No listening exercises found matching your criteria. Try adjusting your filters or check back later!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

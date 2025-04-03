@@ -141,13 +141,21 @@ def evaluate_pronunciation(request):
             if not user_speech or user_speech == 'No speech detected':
                 # If we can't get any speech, provide a simpler evaluation
                 score, word_scores = 50, {word: 50 for word in reference_text.lower().split()}
+                phoneme_analysis = {}  # No phoneme analysis when speech not detected
             else:
-                # Use the recognized speech to evaluate pronunciation
-                score, word_scores = real_pronunciation_evaluation(user_speech, reference_text)
+                # Use the new advanced evaluation that includes phoneme-level analysis
+                try:
+                    score, word_scores, phoneme_analysis = advanced_pronunciation_evaluation(user_speech, reference_text)
+                except Exception as e:
+                    print(f"Advanced evaluation error: {str(e)}")
+                    # Fall back to regular evaluation without phoneme analysis
+                    score, word_scores = real_pronunciation_evaluation(user_speech, reference_text)
+                    phoneme_analysis = {}
             
             return JsonResponse({
                 'overall_score': score,
                 'word_scores': word_scores,
+                'phoneme_analysis': phoneme_analysis,
                 'recognized_text': user_speech
             })
         except Exception as e:
@@ -158,8 +166,105 @@ def evaluate_pronunciation(request):
     
     return JsonResponse({'error': 'POST request required'}, status=400)
 
+def analyze_phonemes(reference_word, user_word):
+    """Analyze phonemes within a word and identify pronunciation errors at the phoneme level.
+    
+    Args:
+        reference_word: The correct word (text)
+        user_word: The user's pronounced word (text)
+    
+    Returns:
+        A dictionary with phoneme-level analysis including:
+        - phoneme_scores: Score for each phoneme (0-100)
+        - problem_phonemes: List of indices where errors occurred
+        - reference_phonemes: List of reference phonemes
+        - user_phonemes: List of user's pronounced phonemes
+    """
+    try:
+        # Convert words to IPA (International Phonetic Alphabet)
+        reference_ipa = epitran_converter.transliterate(reference_word)
+        user_ipa = epitran_converter.transliterate(user_word)
+        
+        # Split into individual phonemes
+        # Note: This is a simplification, as some IPA symbols represent single phonemes with multiple characters
+        reference_phonemes = list(reference_ipa)
+        user_phonemes = list(user_ipa)
+        
+        # Prepare results
+        phoneme_scores = {}
+        problem_phonemes = []
+        
+        # Compare phonemes using Levenshtein distance for alignment
+        from difflib import SequenceMatcher
+        matcher = SequenceMatcher(None, reference_phonemes, user_phonemes)
+        
+        # Map each reference phoneme to its closest match in user pronunciation
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == 'equal':
+                # Phonemes match perfectly
+                for i in range(i1, i2):
+                    phoneme_idx = str(i)
+                    phoneme_scores[phoneme_idx] = 100
+            elif tag == 'replace':
+                # Phoneme was mispronounced
+                for i in range(i1, i2):
+                    phoneme_idx = str(i)
+                    # Calculate similarity between the phonemes
+                    if j1 < j2:  # If there's a corresponding user phoneme
+                        j = j1 + min(i - i1, j2 - j1 - 1)
+                        # Use phonetic features to calculate similarity
+                        ref_phoneme = reference_phonemes[i]
+                        user_phoneme = user_phonemes[j]
+                        
+                        # Get phonetic features distance
+                        try:
+                            distance = phon_distance.weighted_feature_edit_distance(ref_phoneme, user_phoneme)
+                            similarity = max(0, 100 - (distance * 50))
+                        except:
+                            similarity = 40  # Default moderate score for comparison error
+                        
+                        phoneme_scores[phoneme_idx] = similarity
+                        if similarity < 70:  # Threshold for marking as problematic
+                            problem_phonemes.append(i)
+                    else:
+                        phoneme_scores[phoneme_idx] = 0
+                        problem_phonemes.append(i)
+            elif tag == 'delete':
+                # User omitted these phonemes
+                for i in range(i1, i2):
+                    phoneme_idx = str(i)
+                    phoneme_scores[phoneme_idx] = 0
+                    problem_phonemes.append(i)
+            elif tag == 'insert':
+                # User added extra phonemes (we don't score these in the reference)
+                pass
+        
+        # Calculate overall word score based on phoneme scores
+        if phoneme_scores:
+            phoneme_level_score = sum(phoneme_scores.values()) / len(phoneme_scores)
+        else:
+            phoneme_level_score = 0
+            
+        return {
+            'score': round(phoneme_level_score),
+            'phoneme_scores': phoneme_scores,
+            'problem_phonemes': problem_phonemes,
+            'reference_phonemes': reference_phonemes,
+            'user_phonemes': user_phonemes
+        }
+    except Exception as e:
+        print(f"Error in analyze_phonemes: {str(e)}")
+        # Return a default structure
+        return {
+            'score': 70,
+            'phoneme_scores': {},
+            'problem_phonemes': [],
+            'reference_phonemes': list(reference_word),
+            'user_phonemes': list(user_word)
+        }
+
 def advanced_pronunciation_evaluation(user_speech, reference_text):
-    """Evaluate pronunciation using phonetic comparison.
+    """Evaluate pronunciation using phonetic comparison with phoneme-level analysis.
     
     In a full implementation, this would use the audio data to perform speech recognition.
     For this demo, we'll simulate the speech recognition part but use real phonetic comparison.
@@ -169,49 +274,48 @@ def advanced_pronunciation_evaluation(user_speech, reference_text):
         reference_text = reference_text.lower().replace('.', '').replace(',', '').replace('?', '').replace('!', '')
         words = reference_text.split()
         word_scores = {}
+        phoneme_analysis = {}
         
         if not words:
             # Handle empty text case
-            return 75, {'no_words': 75}
+            return 75, {'no_words': 75}, {}
         
         # For each word, calculate a pronunciation score based on phonetic similarity
         for word in words:
             try:
-                # Convert the word to its IPA (International Phonetic Alphabet) representation
-                reference_ipa = epitran_converter.transliterate(word)
-                
-                # In a real implementation, we would get the IPA from the user's audio
+                # In a real implementation, we would get the actual spoken word from the user's audio
                 # For demo purposes, we'll create a simulated pronunciation with some errors
-                # This simulates common pronunciation mistakes
                 simulated_pronunciation = simulate_pronunciation_with_errors(word)
-                user_ipa = epitran_converter.transliterate(simulated_pronunciation)
                 
-                # Calculate the phonetic distance between reference and user pronunciation
-                # Lower distance means better pronunciation
-                distance = phon_distance.weighted_feature_edit_distance(reference_ipa, user_ipa)
+                # Analyze at phoneme level
+                phoneme_results = analyze_phonemes(word, simulated_pronunciation)
                 
-                # Convert the distance to a score (0-100)
-                # The formula is calibrated so that perfect match = 100, typical errors = 60-80
-                max_distance = max(len(reference_ipa), len(user_ipa)) * 1.5
-                if max_distance == 0:
-                    normalized_score = 100
-                else:
-                    normalized_score = max(0, min(100, 100 - (distance / max_distance * 100)))
-                
-                word_scores[word] = round(normalized_score)
+                # Store the word score and phoneme analysis
+                word_scores[word] = phoneme_results['score']
+                phoneme_analysis[word] = {
+                    'problem_phonemes': phoneme_results['problem_phonemes'],
+                    'reference_phonemes': phoneme_results['reference_phonemes'],
+                    'user_phonemes': phoneme_results['user_phonemes']
+                }
             except Exception as e:
                 print(f"Error processing word '{word}': {str(e)}")
                 # Assign a default score if there's an error with a specific word
                 word_scores[word] = 70
+                phoneme_analysis[word] = {
+                    'problem_phonemes': [],
+                    'reference_phonemes': list(word),
+                    'user_phonemes': list(word)
+                }
         
         # Calculate overall score as average of word scores
         overall_score = sum(word_scores.values()) / len(word_scores) if word_scores else 75
         
-        return round(overall_score), word_scores
+        return round(overall_score), word_scores, phoneme_analysis
     except Exception as e:
         print(f"Error in advanced_pronunciation_evaluation: {str(e)}")
         # Fallback to random scores if there's a major error
-        return simulate_pronunciation_evaluation_fallback(reference_text)
+        scores, word_scores = simulate_pronunciation_evaluation_fallback(reference_text)
+        return scores, word_scores, {}
 
 def simulate_pronunciation_evaluation_fallback(reference_text):
     """Fallback to random scores if the advanced evaluation fails."""

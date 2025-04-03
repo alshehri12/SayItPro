@@ -1,0 +1,267 @@
+{% extends 'reading_progress/base.html' %}
+{% load static %}
+
+{% block title %}Reading Progress Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Your Reading Dashboard</h1>
+    <p class="text-muted">Track your progress and continue your reading journey</p>
+</div>
+
+<div class="row mt-4">
+    <!-- Stats Overview -->
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Total Time Spent</h5>
+                <div class="stat-value">{{ total_time }}</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Words Read</h5>
+                <div class="stat-value">{{ total_words }}</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" role="progressbar" style="width: 60%;" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Reading Sessions</h5>
+                <div class="stat-value">{{ recent_sessions|length }}</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" role="progressbar" style="width: 40%;" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reading Sessions -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Reading Sessions</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_sessions %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Level</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>{{ session.reading_material.title }}</td>
+                                <td><span class="badge bg-info">{{ session.reading_material.level.name }}</span></td>
+                                <td>{{ session.started_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if session.is_completed %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.is_completed %}
+                                    <a href="{% url 'reading_progress:complete_session' session.id %}" class="btn btn-sm btn-outline-primary">View Results</a>
+                                    {% else %}
+                                    <a href="{% url 'reading_progress:session' session.id %}" class="btn btn-sm btn-primary">Continue</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center">
+                    <p>You haven't started any reading sessions yet.</p>
+                    <a href="{% url 'reading_progress:material_list' %}" class="btn btn-primary">Find Reading Materials</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress by Level -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Your Progress by Level</h5>
+            </div>
+            <div class="card-body">
+                {% if progress_data %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <canvas id="levelProgressChart"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="list-group">
+                            {% for progress in progress_data %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ progress.level.name }}</h6>
+                                    <small>{{ progress.readings_completed }} readings</small>
+                                </div>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {% widthratio progress.readings_completed 10 100 %}%;" 
+                                         aria-valuenow="{{ progress.readings_completed }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="10">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    Average WPM: {{ progress.average_wpm|floatformat:0 }} • 
+                                    Accuracy: {{ progress.average_accuracy|floatformat:1 }}%
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <p>Start reading to see your progress by level!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommended Materials -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3 class="section-heading">Recommended for You</h3>
+    </div>
+    
+    {% if recommended_materials %}
+        {% for material in recommended_materials %}
+            <div class="col-md-4 mb-4">
+                <div class="card reading-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ material.title }}</h5>
+                        <p class="card-text">
+                            <span class="badge bg-info">{{ material.level.name }}</span>
+                            <span class="badge bg-secondary">{{ material.get_category_display }}</span>
+                        </p>
+                        <p class="card-text text-muted">
+                            <small>{{ material.word_count }} words • About {{ material.estimated_time_minutes }} min</small>
+                        </p>
+                        <a href="{% url 'reading_progress:start_session' material.id %}" class="btn btn-primary">Start Reading</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <p class="text-center">No recommendations available yet.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Recent Badges -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3 class="section-heading">Recent Badges</h3>
+    </div>
+    
+    {% if badges %}
+        {% for badge in badges %}
+            <div class="col-md-3 mb-4">
+                <div class="card badge-card text-center">
+                    <div class="card-body">
+                        {% if badge.badge.image %}
+                            <img src="{{ badge.badge.image.url }}" alt="{{ badge.badge.name }}" class="badge-image">
+                        {% else %}
+                            <div class="badge-placeholder">
+                                <i class="bi bi-award"></i>
+                            </div>
+                        {% endif %}
+                        <h5 class="card-title mt-3">{{ badge.badge.name }}</h5>
+                        <p class="card-text small">{{ badge.badge.description }}</p>
+                        <small class="text-muted">Earned on {{ badge.date_earned|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <p class="text-center">Complete reading sessions to earn badges!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if progress_data %}
+    // Set up progress chart
+    const ctx = document.getElementById('levelProgressChart').getContext('2d');
+    const progressChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for progress in progress_data %}
+                '{{ progress.level.name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Readings Completed',
+                data: [
+                    {% for progress in progress_data %}
+                    {{ progress.readings_completed }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Words Read (hundreds)',
+                data: [
+                    {% for progress in progress_data %}
+                    {{ progress.total_words_read|divisibleby:"100" }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

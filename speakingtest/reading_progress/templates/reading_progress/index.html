@@ -1,0 +1,102 @@
+{% extends 'reading_progress/base.html' %}
+{% load static %}
+
+{% block title %}Reading Progress Tracker - Home{% endblock %}
+
+{% block content %}
+<div class="jumbotron text-center reading-hero">
+    <h1 class="display-4">Improve Your Reading Skills</h1>
+    <p class="lead">Track your progress, improve your speed and comprehension with our interactive reading exercises.</p>
+    {% if user.is_authenticated %}
+    <a href="{% url 'reading_progress:dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+    {% else %}
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Get Started</a>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="bi bi-mic"></i>
+            </div>
+            <h3>Voice Recording</h3>
+            <p>Record your reading and get instant feedback on pronunciation, pace, and fluency.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="bi bi-graph-up"></i>
+            </div>
+            <h3>Track Progress</h3>
+            <p>Visualize your improvement over time with detailed analytics and progress tracking.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="bi bi-award"></i>
+            </div>
+            <h3>Earn Badges</h3>
+            <p>Stay motivated with badges and achievements as you improve your reading skills.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="section-heading">Featured Reading Materials</h2>
+    </div>
+    
+    {% if featured_materials %}
+        {% for material in featured_materials %}
+            <div class="col-md-4 mb-4">
+                <div class="card reading-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ material.title }}</h5>
+                        <p class="card-text">
+                            <span class="badge bg-info">{{ material.level.name }}</span>
+                            <span class="badge bg-secondary">{{ material.get_category_display }}</span>
+                        </p>
+                        <p class="card-text text-muted">
+                            <small>{{ material.word_count }} words • About {{ material.estimated_time_minutes }} min</small>
+                        </p>
+                        <a href="{% url 'reading_progress:material_detail' material.id %}" class="btn btn-outline-primary">View Material</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <p class="text-center">No featured materials available yet.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="section-heading">Reading Levels</h2>
+    </div>
+    
+    {% if reading_levels %}
+        {% for level in reading_levels %}
+            <div class="col-md-3 mb-4">
+                <div class="card level-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ level.name }}</h5>
+                        {% if level.grade_equivalent %}
+                            <p class="card-text text-muted">{{ level.grade_equivalent }}</p>
+                        {% endif %}
+                        <a href="{% url 'reading_progress:material_by_level' level.id %}" class="btn btn-sm btn-outline-primary">Browse Materials</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <p class="text-center">No reading levels available yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

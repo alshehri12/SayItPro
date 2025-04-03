@@ -1,0 +1,144 @@
+{% extends "reading_progress/base.html" %}
+{% load static %}
+
+{% block title %}User Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    
+    .stats-card {
+        background-color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .stats-card h3 {
+        color: #333;
+        font-size: 1.4rem;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    
+    .stats-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .stats-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+    
+    .stats-info h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #555;
+    }
+    
+    .stats-info p {
+        margin: 5px 0 0;
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .progress-chart {
+        height: 250px;
+        margin-bottom: 30px;
+    }
+    
+    .table-container {
+        background-color: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .badge-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 10px;
+    }
+    
+    .badge-card {
+        text-align: center;
+        margin: 10px;
+        padding: 15px;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+    }
+    
+    .student-card {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s;
+    }
+    
+    .student-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .student-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
+        background-color: #e9ecef;
+        margin-right: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #6c757d;
+        font-weight: bold;
+    }
+    
+    .student-info {
+        flex-grow: 1;
+    }
+    
+    .student-name {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .student-status {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .student-actions {
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% block dashboard_content %}{% endblock %}
+{% endblock %}
